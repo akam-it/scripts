@@ -12,13 +12,13 @@ WORKDIR="/tmp"
 ASTERISK_VERSION="18.6.0"
 ASTERISK_FILE="asterisk-${ASTERISK_VERSION}"
 ASTERISK_ARCH="asterisk-${ASTERISK_VERSION}.tar.gz"
-OUTPUT_ARCH="asterisk-${ASTERISK_VERSION}_$ID-$VERSION_ID"
+OUTPUT_ARCH="asterisk_${ASTERISK_VERSION}_$ID-$VERSION_ID"
 
 # Prepare OS
 echo "Current OS: $ID-$VERSION_ID"
 case $ID in
     centos)
-    yum install -y epel-release
+    yum install -y epel-release systemd-devel
     ;;
 esac
 
@@ -52,15 +52,18 @@ if [[ -d "${WORKDIR}/${OUTPUT_ARCH}" ]]; then
 fi
 if [[ -f "${WORKDIR}/${OUTPUT_ARCH}.tar.gz" ]]; then
     echo "Remove existing archive ${WORKDIR}/${OUTPUT_ARCH}.tar.gz?"
-    rm -rI ${WORKDIR}/${OUTPUT_ARCH}.tar.gz
+    rm -I ${WORKDIR}/${OUTPUT_ARCH}.tar.gz
 fi
 cd ${WORKDIR}/${ASTERISK_FILE}
 contrib/scripts/install_prereq install
 ./configure --with-jansson-bundled --prefix=/ --exec_prefix=/usr
+make menuselect
 menuselect/menuselect --disable-category MENUSELECT_CDR --disable-category MENUSELECT_CEL --disable-category MENUSELECT_CHANNELS \
                       --disable-category MENUSELECT_CORE_SOUNDS --disable-category MENUSELECT_MOH \
                       --enable chan_bridge_media --enable chan_pjsip --enable chan_rtp \
-                      --enable CORE-SOUNDS-EN-WAV --enable MOH-OPSOUND-WAV
+                      --enable CORE-SOUNDS-EN-WAV --enable MOH-OPSOUND-WAV \
+                      --disable BUILD_NATIVE
+
 make install DESTDIR=${WORKDIR}/${OUTPUT_ARCH}
 make samples DESTDIR=${WORKDIR}/${OUTPUT_ARCH}
 make config DESTDIR=${WORKDIR}/${OUTPUT_ARCH}
